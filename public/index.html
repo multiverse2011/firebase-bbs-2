@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0" />
+  <title>Materialize chat room</title>
+
+  <!-- CSS  -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection" />
+  <link href="css/style.css" type="text/css" rel="stylesheet" media="screen,projection" />
+
+  <!-- firebase -->
+  <script src="https://www.gstatic.com/firebasejs/4.4.0/firebase.js"></script>
+  <script>
+    // Initialize Firebase
+    var config = {
+      apiKey: "AIzaSyDhvYF4DaJsqmWqqPMRcrpdBZHB7j-q-k0",
+      authDomain: "test-bbs2-8d30b.firebaseapp.com",
+      databaseURL: "https://test-bbs2-8d30b.firebaseio.com",
+      projectId: "test-bbs2-8d30b",
+      storageBucket: "test-bbs2-8d30b.appspot.com",
+      messagingSenderId: "944279816652"
+    };
+    firebase.initializeApp(config);
+  </script>
+</head>
+
+<body>
+  <nav class="light-blue lighten-1" role="navigation">
+    <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">Chat Room</a>
+      <ul class="right hide-on-med-and-down">
+        <li><a id="signin_btn" onclick="signin()">Log in</a></li>
+      </ul>
+
+      <ul id="nav-mobile" class="side-nav">
+        <li><a href="#">Navbar Link</a></li>
+      </ul>
+      <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
+    </div>
+  </nav>
+  <div class="container">
+    <div class="section">
+      <ul class="collection" id="logs">
+
+      </ul>
+
+
+      <div class="row">
+        <form class="col s12">
+          <div class="row">
+            <div class="input-field col s11">
+              <input id="message" type="text" class="validate">
+              <label for="icon_prefix">Type your message here!</label>
+            </div>
+            <div class="input-field col s1">
+              <button class="btn waves-effect waves-light" type="submit" name="action" onclick="post()">
+                <i class="material-icons right">send</i>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+
+  <script>
+    function $(id) { return document.getElementById(id); }
+    // Firebaseのデータベースを取得
+    var db = firebase.database();
+    var bbs_db = db.ref("/bbs/logs");
+    // ログインしているか確認する
+    firebase.auth().onAuthStateChanged(user => {
+      var msg = "ログイン";
+      if (user) {
+        msg = user.displayName + "のログアウト";
+        setEvent();
+      }
+      $('signin_btn').innerHTML = msg;
+    });
+    function signin() {
+      if (firebase.auth().currentUser) { // 既にログインしているならログアウト
+        firebase.auth().signOut();
+      } else {
+        // ログインしてなければ、ログイン画面をポップアップ
+        var provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider);
+      }
+    }
+    // ログが追加された時の処理を記述
+    function addLog(data) {
+      var v = data.val();
+      var e = document.getElementById("logs");
+      var li = document.createElement("li");
+      
+      li.innerHTML = v.user + ": " + v.text;
+      e.appendChild(li);
+    }
+    // データベースに変更があれば内容を通知するよう設定
+    function setEvent() {
+      bbs_db.limitToLast(10).on("child_added", addLog);
+    }
+    // 投稿ボタンが押された時
+    function post() {
+      var txt = document.getElementById("message");
+      var cur = firebase.auth().currentUser;
+      if (!cur) {
+        alert("You need to Log in first!"); return;
+      }
+      bbs_db.push({ text: txt.value, user: cur.displayName });
+      txt.value = "";
+    }
+  </script>
+  <!--  Scripts-->
+  <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="js/materialize.js"></script>
+  <script src="js/init.js"></script>
+</body>
+
+</html>
